@@ -6,13 +6,28 @@ import { useReveal } from "@/hooks/use-reveal"
 export function AboutSection({ scrollToSection }: { scrollToSection?: (index: number) => void }) {
   const { ref, isVisible } = useReveal(0.3)
 
+  // --- MOD ZONE ---
+  const topReservedPercentage = 15; // Reserved space at the top (e.g., 20%)
+  const containerHeight = 100 - topReservedPercentage; // Calculated height (e.g., 80%)
+  // ----------------
+
   return (
     <section
       ref={ref}
-      className="flex h-screen w-screen shrink-0 snap-start items-center px-4 pt-20 md:px-12 md:pt-0 lg:px-16"
+      // h-screen keeps the snap-point valid for the full viewport
+      className="flex h-screen w-screen shrink-0 snap-start flex-col px-4 md:px-12 lg:px-16"
     >
-      <div className="mx-auto w-full max-w-7xl">
-        <div className="grid gap-8 md:grid-cols-2 md:gap-16 lg:gap-24">
+      {/* This inner container handles the 80% height and internal scrolling */}
+      <div 
+        className="mx-auto w-full max-w-7xl overflow-y-auto overflow-x-hidden scrollbar-hide"
+        style={{ 
+            marginTop: `${topReservedPercentage}vh`, 
+            maxHeight: `${containerHeight}vh`,
+            // Optional: adds a bit of padding at the bottom so content doesn't hit the edge
+            paddingBottom: '2rem' 
+        }}
+      >
+        <div className="grid gap-8 md:grid-cols-3 md:gap-16 lg:gap-24">
           {/* Left side - Story */}
           <div>
             <div
@@ -21,11 +36,11 @@ export function AboutSection({ scrollToSection }: { scrollToSection?: (index: nu
               }`}
             >
               <h2 className="mb-3 font-sans text-3xl font-light leading-[1.1] tracking-tight text-foreground md:mb-4 md:text-6xl lg:text-7xl">
-                Building the
+                Welcome
                 <br />
-                future of
+                To Panha's
                 <br />
-                <span className="text-foreground/40">digital</span>
+                <span className="text-foreground/40">Portfolio</span>
               </h2>
             </div>
 
@@ -36,21 +51,22 @@ export function AboutSection({ scrollToSection }: { scrollToSection?: (index: nu
               style={{ transitionDelay: "200ms" }}
             >
               <p className="max-w-md text-sm leading-relaxed text-foreground/90 md:text-lg">
-                We're a collective of designers, developers, and creative technologists obsessed with crafting
-                exceptional digital experiences.
+                I am a solo designer, developer and creative technologist obsessed with crafting exceptional digital experiences.
               </p>
               <p className="max-w-md text-sm leading-relaxed text-foreground/90 md:text-lg">
                 Every project is an opportunity to explore new possibilities and push creative boundaries.
               </p>
             </div>
           </div>
+          <div className="flex flex-col justify-center space-y-6 md:space-y-12">
+            <img src="panha.jpg" alt="Profile"/>
+          </div>
 
-          {/* Right side - Stats with creative layout */}
+          {/* Right side - Stats */}
           <div className="flex flex-col justify-center space-y-6 md:space-y-12">
             {[
-              { value: "150+", label: "Projects", sublabel: "Delivered worldwide", direction: "right" },
-              { value: "8", label: "Years", sublabel: "Of innovation", direction: "left" },
-              { value: "12", label: "Awards", sublabel: "Industry recognition", direction: "right" },
+              { value: "3+", label: "Projects", sublabel: "In the making so far", direction: "right" },
+              { value: "3+", label: "Years", sublabel: "Of innovation", direction: "left" },
             ].map((stat, i) => {
               const getRevealClass = () => {
                 if (!isVisible) {
@@ -80,6 +96,7 @@ export function AboutSection({ scrollToSection }: { scrollToSection?: (index: nu
           </div>
         </div>
 
+        {/* Action Buttons */}
         <div
           className={`mt-8 flex flex-wrap gap-3 transition-all duration-700 md:mt-16 md:gap-4 ${
             isVisible ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"

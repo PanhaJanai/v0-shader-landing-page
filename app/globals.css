@@ -117,12 +117,15 @@
 }
 
 @layer base {
+  /* This ensures the logic only kicks in when our attribute is present */
+  body[data-hide-cursor="true"],
+  body[data-hide-cursor="true"] * {
+    cursor: none !important;
+  }
+
+  /* Keep your other base styles here, but remove the old "cursor: none" from * */
   * {
     @apply border-border outline-ring/50;
-    cursor: none;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 
   [data-scroll-container] {

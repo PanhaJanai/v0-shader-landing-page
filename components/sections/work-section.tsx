@@ -48,7 +48,8 @@ export function WorkSection() {
               category: "E-commerce",
               year: "2026",
               direction: "right",
-              url: "https://e-commerce-website-tawny-eight-18.vercel.app/nested"
+              // url: "https://e-commerce-website-tawny-eight-18.vercel.app/nested"
+              url: "/uniqlo"
             },
             {
               number: "03",

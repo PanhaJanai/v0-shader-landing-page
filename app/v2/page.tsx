@@ -18,6 +18,10 @@ export default function Home() {
   const touchStartX = useRef(0)
   const shaderContainerRef = useRef<HTMLDivElement>(null)
   const scrollThrottleRef = useRef<number | undefined>(undefined)
+  const isScrollingRef = useRef(false);
+  const lastScrollTimeRef = useRef(0);
+  const scrollThreshold = 40; // Equivalent to Swiper's thresholdDelta
+  const scrollDelay = 800;
 
   useEffect(() => {
     const checkShaderReady = () => {
@@ -57,6 +61,7 @@ export default function Home() {
         behavior: "smooth",
       })
       setCurrentSection(index)
+      console.log("hi")
     }
   }
 
@@ -103,38 +108,89 @@ export default function Home() {
     }
   }, [currentSection])
 
-  useEffect(() => {
+/*   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
+      // Only handle vertical scrolling
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        e.preventDefault()
+        e.preventDefault();
 
-        if (!scrollContainerRef.current) return
+        // 2. If we are currently "locked," ignore all wheel events
+        if (isScrollingRef.current) return;
 
-        const scrollTimeout = setTimeout(() => {
-        // scroll logic here
+        // 3. Lock the scroll logic
+        isScrollingRef.current = true;
+
+        if (!scrollContainerRef.current) return;
+
+        // Determine direction
         if (e.deltaY > 0 && currentSection < 4) {
-          scrollToSection(currentSection + 1)
+          scrollToSection(currentSection + 1);
         } else if (e.deltaY < 0 && currentSection > 0) {
-          scrollToSection(currentSection - 1)
+          scrollToSection(currentSection - 1);
         }
-      }, 100) // adjust the delay time as needed
 
-      return () => clearTimeout(scrollTimeout)
-  
+        // 4. Release the lock after a delay (e.g., 1000ms)
+        // This allows the smooth scroll to finish and prevents trackpad inertia from skipping
+        setTimeout(() => {
+          isScrollingRef.current = false;
+        }, 1000); 
       }
-    }
+    };
 
-    const container = scrollContainerRef.current
+    const container = scrollContainerRef.current;
     if (container) {
-      container.addEventListener("wheel", handleWheel, { passive: false })
+      container.addEventListener("wheel", handleWheel, { passive: false });
     }
 
     return () => {
       if (container) {
-        container.removeEventListener("wheel", handleWheel)
+        container.removeEventListener("wheel", handleWheel);
+      }
+    };
+  }, [currentSection]); */
+
+  useEffect(() => {
+  const handleWheel = (e: WheelEvent) => {
+    // Prevent default browser scrolling
+    e.preventDefault();
+
+    const now = Date.now();
+    const deltaY = e.deltaY;
+
+    // 2. LOGIC CHECK 1: Time Threshold (thresholdTime)
+    // If the last successful scroll was less than 800ms ago, ignore this event.
+    if (now - lastScrollTimeRef.current < scrollDelay) return;
+
+    // 3. LOGIC CHECK 2: Delta Threshold (thresholdDelta)
+    // Ignore tiny movements or the very "tail end" of trackpad inertia.
+    if (Math.abs(deltaY) < scrollThreshold) return;
+
+    // 4. LOGIC CHECK 3: Directional focus
+    // Ensure the user is trying to scroll vertically more than horizontally.
+    if (Math.abs(deltaY) > Math.abs(e.deltaX)) {
+      
+      if (deltaY > 0 && currentSection < 4) {
+        lastScrollTimeRef.current = now; // Mark the time of successful scroll
+        scrollToSection(currentSection + 1);
+      } else if (deltaY < 0 && currentSection > 0) {
+        lastScrollTimeRef.current = now; // Mark the time of successful scroll
+        scrollToSection(currentSection - 1);
       }
     }
-  }, [currentSection])
+  };
+
+  const container = scrollContainerRef.current;
+  if (container) {
+    // Use passive: false to allow e.preventDefault()
+    container.addEventListener("wheel", handleWheel, { passive: false });
+  }
+
+  return () => {
+    if (container) {
+      container.removeEventListener("wheel", handleWheel);
+    }
+  };
+}, [currentSection]); // Dependencies remain the same
 
   useEffect(() => {
     const handleScroll = () => {
@@ -152,13 +208,14 @@ export default function Home() {
 
         if (newSection !== currentSection && newSection >= 0 && newSection <= 4) {
           setCurrentSection(newSection)
+          console.log("useEffect -> handleScroll -> setCurrentSection(newSection)")
         }
 
         scrollThrottleRef.current = undefined
       })
     }
 
-    const container = scrollContainerRef.current
+    /* const container = scrollContainerRef.current
     if (container) {
       container.addEventListener("scroll", handleScroll, { passive: true })
     }
@@ -170,7 +227,7 @@ export default function Home() {
       if (scrollThrottleRef.current) {
         cancelAnimationFrame(scrollThrottleRef.current)
       }
-    }
+    } */
   }, [currentSection])
 
   return (
@@ -232,7 +289,8 @@ export default function Home() {
           {["Home", "Work", "Services", "About", "Contact"].map((item, index) => (
             <button
               key={item}
-              onClick={() => scrollToSection(index)}
+              // onClick ran 1 time and so does scrollToSection
+              onClick={() => {scrollToSection(index); console.log("onClick's scrollToSection(index)")}}
               className={`group relative font-sans text-sm font-medium transition-colors ${
                 currentSection === index ? "text-foreground" : "text-foreground/80 hover:text-foreground"
               }`}
