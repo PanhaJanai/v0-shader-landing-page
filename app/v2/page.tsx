@@ -211,9 +211,9 @@ export default function Home() {
           />
           <ChromaFlow
             baseColor="#0066ff"
-            intensity={0.9}
+            intensity={0.7}
             radius={1.8}
-            momentum={25}
+            momentum={50}
             maskType="alpha"
             opacity={0.97}
           />
