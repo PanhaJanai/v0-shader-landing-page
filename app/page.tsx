@@ -110,19 +110,6 @@ export default function Home() {
 
         if (!scrollContainerRef.current) return
 
-        // scrollContainerRef.current.scrollBy({
-        //   left: e.deltaY,
-        //   behavior: "instant",
-        // })
-
-        // const sectionWidth = scrollContainerRef.current.offsetWidth
-        // const newSection = Math.round(scrollContainerRef.current.scrollLeft / sectionWidth)
-        // console.log("newSection", newSection)
-        // console.log("currentSection", currentSection)
-        // if (newSection !== currentSection) {
-        //   setCurrentSection(newSection)
-        // }
-
         const scrollTimeout = setTimeout(() => {
         // scroll logic here
         if (e.deltaY > 0 && currentSection < 4) {

@@ -65,8 +65,9 @@ export function AboutSection({ scrollToSection }: { scrollToSection?: (index: nu
           {/* Right side - Stats */}
           <div className="flex flex-col justify-center space-y-6 md:space-y-12">
             {[
-              { value: "3+", label: "Projects", sublabel: "In the making so far", direction: "right" },
-              { value: "3+", label: "Years", sublabel: "Of innovation", direction: "left" },
+              { value: "3+", label: "Case Studies", sublabel: "In the making so far", direction: "right" },
+              { value: "1k+", label: "Days", sublabel: "Of innovation and coding", direction: "left" },
+              { value: "10k+", label: "Lines", sublabel: "Of code written", direction: "left" },
             ].map((stat, i) => {
               const getRevealClass = () => {
                 if (!isVisible) {

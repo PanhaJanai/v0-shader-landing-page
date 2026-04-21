@@ -11,6 +11,7 @@ import { MagneticButton } from "@/components/magnetic-button"
 import { useRef, useEffect, useState } from "react"
 
 export default function Home() {
+  // --- 1. STATE & REFS ---
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [currentSection, setCurrentSection] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
@@ -18,11 +19,17 @@ export default function Home() {
   const touchStartX = useRef(0)
   const shaderContainerRef = useRef<HTMLDivElement>(null)
   const scrollThrottleRef = useRef<number | undefined>(undefined)
+  
+  // Custom Inertia Logic Refs
   const isScrollingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
-  const scrollThreshold = 40; // Equivalent to Swiper's thresholdDelta
-  const scrollDelay = 800;
+  
+  // MODIFIERS: Change these to adjust the "weight" of the scroll
+  const scrollThreshold = 40; // Minimum delta to trigger a move
+  const scrollDelay = 800;    // Cooldown in ms to prevent skipping sections
 
+  // --- 2. SHADER STAGING ---
+  // Ensures the GPU has actually rendered the shader before we show the page.
   useEffect(() => {
     const checkShaderReady = () => {
       if (shaderContainerRef.current) {
@@ -38,9 +45,7 @@ export default function Home() {
     if (checkShaderReady()) return
 
     const intervalId = setInterval(() => {
-      if (checkShaderReady()) {
-        clearInterval(intervalId)
-      }
+      if (checkShaderReady()) clearInterval(intervalId)
     }, 100)
 
     const fallbackTimer = setTimeout(() => {
@@ -53,6 +58,8 @@ export default function Home() {
     }
   }, [])
 
+  // --- 3. NAVIGATION LOGIC ---
+  // The master function for horizontal movement.
   const scrollToSection = (index: number) => {
     if (scrollContainerRef.current) {
       const sectionWidth = scrollContainerRef.current.offsetWidth
@@ -61,10 +68,11 @@ export default function Home() {
         behavior: "smooth",
       })
       setCurrentSection(index)
-      console.log("hi")
+      console.log("hi") // Tracking movement trigger
     }
   }
 
+  // --- 4. TOUCH ORCHESTRATION (Mobile) ---
   useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY
@@ -72,6 +80,7 @@ export default function Home() {
     }
 
     const handleTouchMove = (e: TouchEvent) => {
+      // Prevents vertical "wobble" while swiping horizontally
       if (Math.abs(e.touches[0].clientY - touchStartY.current) > 10) {
         e.preventDefault()
       }
@@ -83,6 +92,7 @@ export default function Home() {
       const deltaY = touchStartY.current - touchEndY
       const deltaX = touchStartX.current - touchEndX
 
+      // Trigger section jump if swipe is vertical enough and long enough (50px)
       if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
         if (deltaY > 0 && currentSection < 4) {
           scrollToSection(currentSection + 1)
@@ -108,32 +118,30 @@ export default function Home() {
     }
   }, [currentSection])
 
-/*   useEffect(() => {
+  // --- 5. WHEEL & INERTIA CONTROL (Desktop) ---
+  // This blocks natural scrolling and enforces your custom 800ms "one-section-at-a-time" rule.
+  useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // Only handle vertical scrolling
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        e.preventDefault();
+      e.preventDefault();
 
-        // 2. If we are currently "locked," ignore all wheel events
-        if (isScrollingRef.current) return;
+      const now = Date.now();
+      const deltaY = e.deltaY;
 
-        // 3. Lock the scroll logic
-        isScrollingRef.current = true;
+      // COOLDOWN CHECK: Is this a new scroll or just trackpad inertia?
+      if (now - lastScrollTimeRef.current < scrollDelay) return;
 
-        if (!scrollContainerRef.current) return;
+      // INTENT CHECK: Was the movement strong enough?
+      if (Math.abs(deltaY) < scrollThreshold) return;
 
-        // Determine direction
-        if (e.deltaY > 0 && currentSection < 4) {
+      // DIRECTION CHECK: Ensure they aren't trying to scroll horizontally manually
+      if (Math.abs(deltaY) > Math.abs(e.deltaX)) {
+        if (deltaY > 0 && currentSection < 4) {
+          lastScrollTimeRef.current = now; 
           scrollToSection(currentSection + 1);
-        } else if (e.deltaY < 0 && currentSection > 0) {
+        } else if (deltaY < 0 && currentSection > 0) {
+          lastScrollTimeRef.current = now; 
           scrollToSection(currentSection - 1);
         }
-
-        // 4. Release the lock after a delay (e.g., 1000ms)
-        // This allows the smooth scroll to finish and prevents trackpad inertia from skipping
-        setTimeout(() => {
-          isScrollingRef.current = false;
-        }, 1000); 
       }
     };
 
@@ -147,51 +155,10 @@ export default function Home() {
         container.removeEventListener("wheel", handleWheel);
       }
     };
-  }, [currentSection]); */
+  }, [currentSection]);
 
-  useEffect(() => {
-  const handleWheel = (e: WheelEvent) => {
-    // Prevent default browser scrolling
-    e.preventDefault();
-
-    const now = Date.now();
-    const deltaY = e.deltaY;
-
-    // 2. LOGIC CHECK 1: Time Threshold (thresholdTime)
-    // If the last successful scroll was less than 800ms ago, ignore this event.
-    if (now - lastScrollTimeRef.current < scrollDelay) return;
-
-    // 3. LOGIC CHECK 2: Delta Threshold (thresholdDelta)
-    // Ignore tiny movements or the very "tail end" of trackpad inertia.
-    if (Math.abs(deltaY) < scrollThreshold) return;
-
-    // 4. LOGIC CHECK 3: Directional focus
-    // Ensure the user is trying to scroll vertically more than horizontally.
-    if (Math.abs(deltaY) > Math.abs(e.deltaX)) {
-      
-      if (deltaY > 0 && currentSection < 4) {
-        lastScrollTimeRef.current = now; // Mark the time of successful scroll
-        scrollToSection(currentSection + 1);
-      } else if (deltaY < 0 && currentSection > 0) {
-        lastScrollTimeRef.current = now; // Mark the time of successful scroll
-        scrollToSection(currentSection - 1);
-      }
-    }
-  };
-
-  const container = scrollContainerRef.current;
-  if (container) {
-    // Use passive: false to allow e.preventDefault()
-    container.addEventListener("wheel", handleWheel, { passive: false });
-  }
-
-  return () => {
-    if (container) {
-      container.removeEventListener("wheel", handleWheel);
-    }
-  };
-}, [currentSection]); // Dependencies remain the same
-
+  // --- 6. SCROLL OBSERVER ---
+  // (Currently manual sync logic)
   useEffect(() => {
     const handleScroll = () => {
       if (scrollThrottleRef.current) return
@@ -214,20 +181,7 @@ export default function Home() {
         scrollThrottleRef.current = undefined
       })
     }
-
-    /* const container = scrollContainerRef.current
-    if (container) {
-      container.addEventListener("scroll", handleScroll, { passive: true })
-    }
-
-    return () => {
-      if (container) {
-        container.removeEventListener("scroll", handleScroll)
-      }
-      if (scrollThrottleRef.current) {
-        cancelAnimationFrame(scrollThrottleRef.current)
-      }
-    } */
+    // Note: Event listener is commented out in your original logic to prioritize the Wheel Handler.
   }, [currentSection])
 
   return (
@@ -235,6 +189,7 @@ export default function Home() {
       <CustomCursor />
       <GrainOverlay />
 
+      {/* --- BACKGROUND LAYER --- */}
       <div
         ref={shaderContainerRef}
         className={`fixed inset-0 z-0 transition-opacity duration-700 ${isLoaded ? "opacity-100" : "opacity-0"}`}
@@ -256,10 +211,6 @@ export default function Home() {
           />
           <ChromaFlow
             baseColor="#0066ff"
-            upColor="#0066ff"
-            downColor="#d1d1d1"
-            leftColor="#e19136"
-            rightColor="#e19136"
             intensity={0.9}
             radius={1.8}
             momentum={25}
@@ -270,6 +221,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/20" />
       </div>
 
+      {/* --- HEADER / NAVIGATION --- */}
       <nav
         className={`fixed left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-6 transition-opacity duration-700 md:px-12 ${
           isLoaded ? "opacity-100" : "opacity-0"
@@ -282,14 +234,13 @@ export default function Home() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground/15 backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-foreground/25">
             <span className="font-sans text-xl font-bold text-foreground">P</span>
           </div>
-          <span className="font-sans text-xl font-semibold tracking-tight text-foreground">Panha's Gradient Shading Landing Page</span>
+          <span className="font-sans text-xl font-semibold tracking-tight text-foreground">Panha</span>
         </button>
 
         <div className="hidden items-center gap-8 md:flex">
           {["Home", "Work", "Services", "About", "Contact"].map((item, index) => (
             <button
               key={item}
-              // onClick ran 1 time and so does scrollToSection
               onClick={() => {scrollToSection(index); console.log("onClick's scrollToSection(index)")}}
               className={`group relative font-sans text-sm font-medium transition-colors ${
                 currentSection === index ? "text-foreground" : "text-foreground/80 hover:text-foreground"
@@ -310,6 +261,7 @@ export default function Home() {
         </MagneticButton>
       </nav>
 
+      {/* --- CONTENT CONTAINER (Horizontal) --- */}
       <div
         ref={scrollContainerRef}
         data-scroll-container
@@ -341,7 +293,6 @@ export default function Home() {
               <MagneticButton
                 size="lg"
                 variant="primary"
-                // onClick={() => window.open("https://v0.app/templates/R3n0gnvYFbO", "_blank")}
                 onClick={() => scrollToSection(4)}
               >
                 Get Started
@@ -352,6 +303,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Bottom Indicator */}
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-in fade-in duration-1000 delay-500">
             <div className="flex items-center gap-2">
               <p className="font-mono text-xs text-foreground/80">Scroll to explore</p>
@@ -362,12 +314,14 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Section Imports */}
         <WorkSection />
         <ServicesSection />
         <AboutSection scrollToSection={scrollToSection} />
         <ContactSection />
       </div>
 
+      {/* Global CSS for hiding scrollbars */}
       <style jsx global>{`
         div::-webkit-scrollbar {
           display: none;
