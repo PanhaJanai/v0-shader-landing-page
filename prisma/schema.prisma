@@ -16,3 +16,28 @@ model Message {
   message   String
   createdAt DateTime @default(now())
 }
+
+model FinanceUser {
+  email           String           @id @unique
+  username        String
+  password        String
+  avatar          String           @default("cat")
+  theme           String           @default("light")
+  unlockedAvatars Json            
+  unlockedThemes  Json 
+  points          Int              @default(0)
+  xp              Int              @default(0)
+  level           Int              @default(1)
+  streak          Int              @default(0)
+  createdAt       DateTime         @default(now())
+}
+
+model Themes {
+  id        String      @id @default(cuid())
+  name      String
+}
+
+model Avatars {
+  id        String      @id @default(cuid())
+  name      String
+}
