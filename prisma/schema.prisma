@@ -18,26 +18,59 @@ model Message {
 }
 
 model FinanceUser {
-  email           String           @id @unique
+  email           String        @id @unique
   username        String
   password        String
-  avatar          String           @default("cat")
-  theme           String           @default("light")
-  unlockedAvatars Json            
-  unlockedThemes  Json 
-  points          Int              @default(0)
-  xp              Int              @default(0)
-  level           Int              @default(1)
-  streak          Int              @default(0)
-  createdAt       DateTime         @default(now())
+  avatar          String        @default("cat")
+  theme           String        @default("light")
+  unlockedAvatars Json
+  unlockedThemes  Json
+  points          Int           @default(0)
+  xp              Int           @default(0)
+  level           Int           @default(1)
+  streak          Int           @default(0)
+  transactions    Transaction[]
+  createdAt       DateTime      @default(now())
+  categories      Category[]
 }
 
-model Themes {
-  id        String      @id @default(cuid())
-  name      String
+model Theme {
+  id   String @id @default(cuid())
+  name String
 }
 
-model Avatars {
-  id        String      @id @default(cuid())
-  name      String
+model Avatar {
+  id   String @id @default(cuid())
+  name String
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  name         String
+  icon         String?
+  transactions Transaction[]
+  userEmail    String
+  user         FinanceUser   @relation(fields: [userEmail], references: [email])
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Transaction {
+  id     String          @id @default(cuid())
+  amount Int
+  type   TransactionType
+  note   String?
+  date   DateTime        @default(now())
+
+  // Relations
+  userEmail  String
+  user       FinanceUser @relation(fields: [userEmail], references: [email])
+  categoryId String
+  category   Category    @relation(fields: [categoryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

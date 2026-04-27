@@ -29,6 +29,7 @@
 "use server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // Import the singleton we created
+import { TransactionType } from "@prisma/client";
 
 let _users = [
   {
@@ -62,11 +63,11 @@ let _users = [
 ];
 
 let _transactions = [
-  { id: "t1", userId: "demo", type: "expense", amount: 45,   category: "food",      note: "Groceries",    date: "2024-06-10" },
-  { id: "t2", userId: "demo", type: "expense", amount: 120,  category: "transport", note: "Monthly pass", date: "2024-06-09" },
-  { id: "t3", userId: "demo", type: "income",  amount: 3200, category: "other",     note: "Salary",       date: "2024-06-01" },
-  { id: "t4", userId: "demo", type: "expense", amount: 60,   category: "fun",       note: "Games",        date: "2024-06-07" },
-  { id: "t5", userId: "demo", type: "expense", amount: 800,  category: "rent",      note: "June rent",    date: "2024-06-01" },
+  { id: "t1", userId: "demo", type: "expense", amount: 45, category: "food", note: "Groceries", date: "2024-06-10" },
+  { id: "t2", userId: "demo", type: "expense", amount: 120, category: "transport", note: "Monthly pass", date: "2024-06-09" },
+  { id: "t3", userId: "demo", type: "income", amount: 3200, category: "other", note: "Salary", date: "2024-06-01" },
+  { id: "t4", userId: "demo", type: "expense", amount: 60, category: "fun", note: "Games", date: "2024-06-07" },
+  { id: "t5", userId: "demo", type: "expense", amount: 800, category: "rent", note: "June rent", date: "2024-06-01" },
 ];
 
 let _groups = [
@@ -113,7 +114,7 @@ export async function apiLogin(email, password) {
         email: email,
       },
     });
-    console.log(isUserExists);
+    // console.log(isUserExists);
     if (!isUserExists) {
       return ({ error: "Wrong email or password." });
     }
@@ -121,7 +122,7 @@ export async function apiLogin(email, password) {
   } catch (error) {
     return ({ error: "Failed to login", details: String(error) });
   }
-} 
+}
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,7 +146,7 @@ export async function apiRegister(username, email, password) {
   // return { user: safe };
 
   try {
-    console.log("Attempting to register user with email:", email);
+    // console.log("Attempting to register user with email:", email);
     const isUserAvailable = await prisma.financeUser.findUnique({
       where: {
         email: email,
@@ -154,28 +155,28 @@ export async function apiRegister(username, email, password) {
     if (isUserAvailable) {
       return ({ error: "Email already in use." });
     }
-      const safeUser = await prisma.financeUser.create({
-        data: {
-          email: email,
-          username: username,
-          password: password, // Still passed here to be saved
-          unlockedThemes: ["default"],
-          unlockedAvatars: ["cat"],
-        },
-        select: {
-          email: true,
-          username: true,
-          unlockedThemes: true,
-          unlockedAvatars: true,
-          points: true,
-          xp: true,
-          level: true,
-          streak: true,
-          // Note: password is NOT here, so it won't be returned
-        }
-      });
-      console.log("New user created:", safeUser);
-      return ({user: safeUser,  status: 201 });
+    const safeUser = await prisma.financeUser.create({
+      data: {
+        email: email,
+        username: username,
+        password: password, // Still passed here to be saved
+        unlockedThemes: ["default"],
+        unlockedAvatars: ["cat"],
+      },
+      select: {
+        email: true,
+        username: true,
+        unlockedThemes: true,
+        unlockedAvatars: true,
+        points: true,
+        xp: true,
+        level: true,
+        streak: true,
+        // Note: password is NOT here, so it won't be returned
+      }
+    });
+    // console.log("New user created:", safeUser);
+    return ({ user: safeUser, status: 201 });
   } catch (error) {
     return ({ error: "Failed to register", details: String(error) }); // ✅ Plain object
   }
@@ -224,11 +225,56 @@ export async function apiGetTransactions(userId) {
 // Body:  { userId, type, amount, category, note, date }
 // Returns: { transaction }
 // ─────────────────────────────────────────────────────────────────────────────
-export async function apiAddTransaction(tx) {
+export async function apiAddTransaction(user, tx) {
   await delay();
-  const newTx = { id: uid(), ...tx };
-  _transactions.unshift(newTx);
-  return { transaction: newTx };
+  // const newTx = { id: uid(), ...tx };
+  // _transactions.unshift(newTx);
+  // return { transaction: newTx };
+    let transactionType = tx.type === "expense" ? TransactionType.EXPENSE : TransactionType.INCOME;
+  if (transactionType === undefined) {
+    transactionType = TransactionType.EXPENSE
+  }
+  console.log("Adding transaction for user:", user);
+  console.log("tx data received for new transaction:", tx);
+
+  // try {
+    const newTransaction = await prisma.transaction.create({
+      data: {
+        id: uid(),
+        amount: tx.amount,
+        type: transactionType,
+        note: tx.note,
+        date: tx.date,
+        user: user.email,
+        category: tx.category,
+      },
+      select: {
+        id: true,
+        amount: true,
+        type: true,
+        note: true,
+        date: true,
+        category: true,
+      }
+    });
+
+    console.log("New transaction added:", newTransaction);
+
+    await prisma.financeUser.update({
+      where: { email: tx.userEmail },
+      data: { 
+        xp: { increment: 20 }, 
+        transactions: { connect: { id: newTransaction.id } },
+      },
+    });
+
+    
+    
+    return { transaction: newTransaction };
+  // } catch (error) {
+  //   return ({ error: "Failed to add transaction", details: String(error) });
+  // }
+
 }
 
 

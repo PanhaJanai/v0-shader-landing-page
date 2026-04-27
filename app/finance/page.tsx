@@ -301,8 +301,11 @@ export default function FinanceQuest() {
   // ── TRANSACTIONS ──────────────────────────────────────────────────────────
   async function handleAddTx() {
     if (!txForm.amount || isNaN(txForm.amount)) return;
-    const res = await apiAddTransaction({ userId:currentUser.id, ...txForm, amount:parseFloat(txForm.amount) });
-    setTransactions(p => [res.transaction, ...p]);
+    const res = await apiAddTransaction(currentUser,{ userId:currentUser.id, ...txForm, amount:parseFloat(txForm.amount) });
+    // setTransactions(p => [res.transaction, ...p]);
+    if (res.error) { showToast(`❌ ${res.error}, ${res.detail}`); return; }
+    setTransactions(res.transaction);
+    console.log("Added transaction:", res.transaction);
     setShowTxForm(false);
     setTxForm({ type:"expense", amount:"", category:"food", note:"", date:new Date().toISOString().split("T")[0] });
     await awardXP(20);
