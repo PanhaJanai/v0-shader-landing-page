@@ -1,5 +1,5 @@
 // src/app/api/item/route.ts
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 // import { itemsBackup } from '@/app/state/cartItemSlice';
 
 interface Order {
@@ -9,7 +9,7 @@ interface Order {
   discounted_price: number;
 }
 
-const db = new Database('mydb.sqlite');
+const db = new DatabaseSync('mydb.sqlite');
 
   // db.prepare(`
   //   CREATE TABLE IF NOT EXISTS orders (

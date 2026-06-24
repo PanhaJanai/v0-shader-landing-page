@@ -112,6 +112,19 @@ export function WorkSection() {
     </div>
   )
 } */
+interface ProjectCardProps {
+  project: {
+    number: string
+    title: string
+    category: string
+    year: string
+    direction: string
+    url?: string
+  }
+  index: number
+  isVisible: boolean
+}
+
 function ProjectCard({ project, index, isVisible }: ProjectCardProps) {
   const getRevealClass = () => {
     if (!isVisible) {

@@ -15,15 +15,16 @@ import './styles.css';
 import { Mousewheel, Pagination } from 'swiper/modules';
 import NestedSwiper from './components/nestedSwiper';
 import ProductCard from './components/ProductCard';
+import { original } from '@reduxjs/toolkit';
 
 export default function App() {
   const categories = ["Women", "Men", "Kids", "Baby"];
 
-  const clothes = [
-    { name: "Lawn Mower 001", description: "This premium product features a sleek design and high-quality materials, perfect for your modern lifestyle.", image: '400S.png' },
-    { name: "Lawn Mower 002", description: "This premium product features a sleek design and high-quality materials, perfect for your modern lifestyle.", image: '400S.png' },
-    { name: "Lawn Mower 003", description: "This premium product features a sleek design and high-quality materials, perfect for your modern lifestyle.", image: '400S.png' },
-    { name: "Lawn Mower 004", description: "This premium product features a sleek design and high-quality materials, perfect for your modern lifestyle.", image: '400S.png' }
+  const womenClothes = [
+    { name: "White Off-The-Shoulder Eyelet Mini Dress", description: "Blending a lightweight feel with a clean, elegant silhouette, perfect for a sunny day out.", image: 'shop/women/dress/white-off-the-shoulder-eyelet-mini-dress.jpg', originalPrice: 30.90, discountedPrice: 19.90 },
+    { name: "Women White T-Shirt", description: "Comfortable, breathable, and stylish, the women's white t-shirt is a must-have for any wardrobe.", image: 'shop/women/shirt/white-t.avif', originalPrice: 15.90, discountedPrice: 9.90 },
+    { name: "Black Nike Tennis Skirt", description: "This premium product features a sleek design and high-quality materials, perfect for your modern lifestyle.", image: 'shop/women/skirt/black-nike-tennis-skirt.jpg', originalPrice: 45.90, discountedPrice: 29.90 },
+    { name: "Side-Stripe Track Pants", description: "This premium product features a sleek design and high-quality materials, perfect for your modern lifestyle.", image: 'shop/women/pants/side-stripe-track-pants.avif', originalPrice: 50.90, discountedPrice: 34.90 },
   ];
 
   const [activeCategory, setActiveCategory] = useState("Women");
@@ -94,12 +95,14 @@ export default function App() {
             <SwiperSlide>
               <ProductCard image='400S.png' name='Lawn Mover 004' description='This premium product features a sleek design and high-quality materials, perfect for your modern lifestyle.'/>
             </SwiperSlide> */}
-            {clothes.map((item, idx) => (
+            {womenClothes.map((item, idx) => (
               <SwiperSlide key={idx}>
                 <ProductCard 
                   image={item.image} 
                   name={item.name} 
-                  description={item.description} 
+                  description={item.description}
+                  originalPrice={item.originalPrice}
+                  discountedPrice={item.discountedPrice}
                 />
               </SwiperSlide>
             ))}

@@ -1,0 +1,32 @@
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-slide {
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.swiper-v {
+  background: #0B0B0C;
+}
+
+.swiper-pagination-bullet {
+  background: rgba(197, 168, 128, 0.4) !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: #C5A880 !important;
+  transform: scale(1.2);
+}
+
+.swiper-pagination-vertical.swiper-pagination-bullets {
+  right: 20px !important;
+}
+
+.swiper-pagination-horizontal.swiper-pagination-bullets {
+  bottom: 20px !important;
+}

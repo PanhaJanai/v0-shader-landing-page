@@ -1,15 +1,13 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL") // e.g., "file:./dev.db"
 }
 
-model Message {
+model LandingPageMessage {
   id        String   @id @default(cuid())
   name      String
   email     String
@@ -18,59 +16,123 @@ model Message {
 }
 
 model FinanceUser {
-  email           String        @id @unique
+  id              String         @id @default(cuid())
+  email           String         @unique
   username        String
-  password        String
-  avatar          String        @default("cat")
-  theme           String        @default("light")
-  unlockedAvatars Json
-  unlockedThemes  Json
-  points          Int           @default(0)
-  xp              Int           @default(0)
-  level           Int           @default(1)
-  streak          Int           @default(0)
+  passwordHash    String
+  avatar          String         @default("fox")
+  theme           String         @default("default")
+  points          Int            @default(50)
+  xp              Int            @default(0)
+  level           Int            @default(1)
+  streak          Int            @default(0)
+  sessionToken    String?        @unique
+
   transactions    Transaction[]
-  createdAt       DateTime      @default(now())
-  categories      Category[]
+  savingsGoals    SavingsGoal[]
+
+  // Relations
+  unlockedAvatars UserAvatar[]
+  unlockedThemes  UserTheme[]
+  budgetLimits    BudgetLimit[]
+
+  // Group relations
+  createdGroups   Group[]        @relation("GroupCreator")
+  memberships     GroupMember[]
+  paidExpenses    GroupExpense[]
+
+  createdAt       DateTime       @default(now())
 }
 
-model Theme {
-  id   String @id @default(cuid())
-  name String
+model UserAvatar {
+  id        String      @id @default(cuid())
+  userId    String
+  avatarId  String
+  user      FinanceUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, avatarId])
 }
 
-model Avatar {
-  id   String @id @default(cuid())
-  name String
+model UserTheme {
+  id        String      @id @default(cuid())
+  userId    String
+  themeId   String
+  user      FinanceUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, themeId])
 }
 
-model Category {
-  id           String        @id @default(cuid())
-  name         String
-  icon         String?
-  transactions Transaction[]
-  userEmail    String
-  user         FinanceUser   @relation(fields: [userEmail], references: [email])
-}
+model BudgetLimit {
+  id        String      @id @default(cuid())
+  userId    String
+  category  String
+  amount    Float
+  user      FinanceUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-enum TransactionType {
-  INCOME
-  EXPENSE
+  @@unique([userId, category])
 }
 
 model Transaction {
-  id     String          @id @default(cuid())
-  amount Int
-  type   TransactionType
-  note   String?
-  date   DateTime        @default(now())
+  id        String      @id @default(cuid())
+  amount    Float
+  type      String      // "income" or "expense"
+  category  String      // e.g., "food", "transport"
+  note      String?
+  date      String      // Stored as "YYYY-MM-DD" to match frontend
 
-  // Relations
-  userEmail  String
-  user       FinanceUser @relation(fields: [userEmail], references: [email])
-  categoryId String
-  category   Category    @relation(fields: [categoryId], references: [id])
+  userId    String
+  user      FinanceUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime    @default(now())
+}
+
+model Group {
+  id        String         @id @default(cuid())
+  name      String
+  creatorId String
+  creator   FinanceUser    @relation("GroupCreator", fields: [creatorId], references: [id])
+
+  members   GroupMember[]
+  expenses  GroupExpense[]
+
+  createdAt DateTime       @default(now())
+}
+
+model GroupMember {
+  id        String      @id @default(cuid())
+  groupId   String
+  group     Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      FinanceUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId]) // Prevents duplicate members
+}
+
+model GroupExpense {
+  id           String      @id @default(cuid())
+  groupId      String
+  group        Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  paidByUserId String
+  paidByUser   FinanceUser @relation(fields: [paidByUserId], references: [id])
+  paidByName   String
+
+  amount       Float
+  note         String?
+  date         String      // "YYYY-MM-DD"
+  splits       String      // Stored as JSON string: { "userId": amount }
+
+  createdAt    DateTime    @default(now())
+}
+
+model SavingsGoal {
+  id           String      @id @default(cuid())
+  name         String
+  targetAmount Float
+  savedAmount  Float       @default(0)
+  
+  userId       String
+  user         FinanceUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime    @default(now())
 }

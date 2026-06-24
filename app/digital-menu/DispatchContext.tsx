@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 // import { Provider, useDispatch } from "react-redux";
-import { AppDispatch } from "@/libs/redux/store";
+import { AppDispatch } from "@/lib/redux/store";
 
 // Create a context for the dispatch function
 const DispatchContext = createContext<AppDispatch | null>(null);

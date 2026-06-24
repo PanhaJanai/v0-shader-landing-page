@@ -53,7 +53,7 @@ export default function VirtualizedCard(
       itemSize={itemSize}
       width={"auto"}
     >
-      {({ index, style }) => {
+      {({ index, style }: { index: number; style: React.CSSProperties }) => {
         const items = filteredList.slice(index * numberOfItemsPerRow, index * numberOfItemsPerRow + numberOfItemsPerRow);
         return (
           <div

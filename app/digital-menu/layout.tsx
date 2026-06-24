@@ -26,16 +26,10 @@ export default async function RootLayout({
 }>) {
   // const locale = await getLocale()
   return (
-    <html>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased
-          max-w-[1024px] mx-auto px-4
-          `}
-      >
-        {/* <NextIntlClientProvider > */}
-        {children}
-        {/* </NextIntlClientProvider> */}
-      </body>
-    </html>
+    <div
+      className={`${geistSans.variable} ${geistMono.variable} antialiased max-w-[1024px] mx-auto px-4`}
+    >
+      {children}
+    </div>
   );
 }

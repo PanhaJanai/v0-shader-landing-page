@@ -195,25 +195,25 @@ export default function Home() {
         className={`fixed inset-0 z-0 transition-opacity duration-700 ${isLoaded ? "opacity-100" : "opacity-0"}`}
         style={{ contain: "strict" }}
       >
-        <Shader className="h-full w-full">
+        <Shader className="h-full w-full" dpr={1}>
           <Swirl
             colorA="#1275d8"
             colorB="#e19136"
-            speed={0.8}
-            detail={0.8}
+            speed={0.4}
+            detail={0.3}
             blend={50}
-            coarseX={40}
-            coarseY={40}
-            mediumX={40}
-            mediumY={40}
-            fineX={40}
-            fineY={40}
+            coarseX={15}
+            coarseY={15}
+            mediumX={10}
+            mediumY={10}
+            fineX={5}
+            fineY={5}
           />
           <ChromaFlow
             baseColor="#0066ff"
-            intensity={0.7}
-            radius={1.8}
-            momentum={50}
+            intensity={0.3}
+            radius={2.0}
+            momentum={15}
             maskType="alpha"
             opacity={0.97}
           />

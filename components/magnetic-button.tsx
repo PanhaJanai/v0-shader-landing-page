@@ -3,12 +3,10 @@
 import type React from "react"
 import { useRef } from "react"
 
-interface MagneticButtonProps {
+interface MagneticButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode
-  className?: string
   variant?: "primary" | "secondary" | "ghost"
   size?: "default" | "lg"
-  onClick?: () => void
 }
 
 export function MagneticButton({
@@ -17,10 +15,13 @@ export function MagneticButton({
   variant = "primary",
   size = "default",
   onClick,
+  type = "button",
+  disabled,
+  ...props
 }: MagneticButtonProps) {
   const ref = useRef<HTMLButtonElement>(null)
   const positionRef = useRef({ x: 0, y: 0 })
-  const rafRef = useRef<number>()
+  const rafRef = useRef<number | undefined>(undefined)
 
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!ref.current) return
@@ -65,9 +66,12 @@ export function MagneticButton({
   return (
     <button
       ref={ref}
+      type={type}
+      disabled={disabled}
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      {...props}
       className={`
         relative overflow-hidden rounded-full font-medium
         transition-all duration-300 ease-out will-change-transform

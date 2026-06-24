@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const newMessage = await prisma.message.create({
+    const newMessage = await prisma.landingPageMessage.create({
       data: {
         name,
         email,
@@ -30,7 +30,7 @@ export async function GET() {
   try {
 
     // 2. REAL Database Logic: Fetch all records
-    const contacts = await prisma.contact.findMany({
+    const contacts = await prisma.landingPageMessage.findMany({
       orderBy: { createdAt: 'desc' } // Newest first
     });
     
