@@ -8,7 +8,7 @@ export default function CursorManager() {
   useEffect(() => {
     // Logic: Hide on root "/" and anything starting with "/v2"
     // Everything else (like "/uniqlo") will show the cursor
-    const shouldHide = pathname.startsWith("/v2")
+    const shouldHide = pathname === "/" || pathname.startsWith("/v2")
 
     if (shouldHide) {
       document.body.setAttribute('data-hide-cursor', 'true')

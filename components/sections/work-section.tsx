@@ -40,7 +40,7 @@ export function WorkSection() {
               category: "Hospitality",
               year: "2025",
               direction: "left",
-              url: "https://panha-digital-menu-nextjs.vercel.app/",
+              url: "/digital-menu/v2",
             },
             {
               number: "02",
@@ -49,14 +49,15 @@ export function WorkSection() {
               year: "2026",
               direction: "right",
               // url: "https://e-commerce-website-tawny-eight-18.vercel.app/nested"
-              url: "/shop"
+              url: "/shop/v2"
             },
             {
               number: "03",
-              title: "Spatial Interface",
+              title: "Digital Gallery",
               category: "3D Navigation",
-              year: "2023",
+              year: "2026",
               direction: "left",
+              url: "/parallex/v2",
             },
           ].map((project, i) => (
             <ProjectCard
