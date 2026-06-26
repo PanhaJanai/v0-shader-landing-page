@@ -69,11 +69,25 @@ export default function ParallaxPage() {
   const targetPercentage = useRef(0)
 
   const [activeIndex, setActiveIndex] = useState(0)
+  const [expandedIndex, setExpandedIndexState] = useState<number | null>(null)
+  const expandedIndexRef = useRef<number | null>(null)
+  const dragOccurred = useRef(false)
+
+  const setExpandedIndex = (index: number | null) => {
+    expandedIndexRef.current = index
+    setExpandedIndexState(index)
+    if (index !== null) {
+      const centerPercentage = - (index / (IMAGES.length - 1)) * 100
+      targetPercentage.current = centerPercentage
+      prevPercentage.current = centerPercentage
+    }
+  }
 
   // Mouse & Touch down event
   const handleDown = (clientX: number) => {
     isDragging.current = true
     mouseDownAt.current = clientX
+    dragOccurred.current = false
   }
 
   // Mouse & Touch up event
@@ -89,8 +103,14 @@ export default function ParallaxPage() {
     if (!isDragging.current || mouseDownAt.current === 0) return
 
     const mouseDelta = mouseDownAt.current - clientX
+    if (Math.abs(mouseDelta) > 5) {
+      dragOccurred.current = true
+    }
+
     // Slower and smoother: maxDelta window width * 4 (makes drag less sensitive and more controlled)
-    const maxDelta = window.innerWidth * 4
+    // Reduce maxDelta when expanded to compensate for 0.2 scale visual layout sensitivity
+    const scaleFactor = expandedIndexRef.current !== null ? 0.2 : 1
+    const maxDelta = window.innerWidth * 4 * scaleFactor
 
     const currentDeltaPercentage = (mouseDelta / maxDelta) * -100
     const nextPercentageUnconstrained = prevPercentage.current + currentDeltaPercentage
@@ -199,7 +219,9 @@ export default function ParallaxPage() {
       <GrainOverlay />
 
       {/* Header UI (Camille Mormal Style) */}
-      <header className="fixed top-0 left-0 right-0 z-30 flex justify-between items-baseline px-6 py-6 md:px-12 md:py-8 border-b border-white/5 backdrop-blur-[2px]">
+      <header className={`fixed top-0 left-0 right-0 z-30 flex justify-between items-baseline px-6 py-6 md:px-12 md:py-8 border-b border-white/5 backdrop-blur-[2px] transition-opacity duration-700 ${
+        expandedIndex !== null ? "opacity-0 pointer-events-none" : "opacity-100"
+      }`}>
         <div className="flex flex-col">
           <span className="font-semibold uppercase tracking-[0.25em] text-[11px] font-sans text-neutral-200">
             Camille Mormal
@@ -227,7 +249,9 @@ export default function ParallaxPage() {
       </header>
 
       {/* Fading Background Active Title (Parallax context reveal) */}
-      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 text-center pointer-events-none z-10 w-full px-6 select-none">
+      <div className={`absolute top-[20%] left-1/2 -translate-x-1/2 text-center pointer-events-none z-10 w-full px-6 select-none transition-opacity duration-700 ${
+        expandedIndex !== null ? "opacity-0" : "opacity-100"
+      }`}>
         <span className="font-mono text-[10px] tracking-[0.4em] text-neutral-600 uppercase block mb-3 md:mb-5">
           EXHIBITION NO. {String(activeIndex + 1).padStart(2, "0")}
         </span>
@@ -236,44 +260,64 @@ export default function ParallaxPage() {
         </h2>
       </div>
 
-      {/* Sliding Image Track */}
+      {/* Sliding Image Track Wrapper */}
       <div
-        ref={trackRef}
-        id="image-track"
-        className="flex w-max gap-[2.25vw] md:gap-[2.5vw] absolute left-[50%] top-[55%] select-none touch-none z-20"
-        style={{ transform: "translate(0%, -50%)" }}
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          zIndex: expandedIndex !== null ? 40 : 20,
+          transform: expandedIndex !== null ? "scale(0.2)" : "scale(1)",
+          transformOrigin: "center 90%",
+          transition: "transform 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
       >
-        {IMAGES.map((src, index) => (
+        <div className="w-full h-full relative pointer-events-auto">
+          {/* Sliding Image Track */}
           <div
-            key={index}
-            className={`flex flex-col items-start w-[41vw] sm:w-[30vw] md:w-[21vw] shrink-0 group transition-opacity duration-700 ${
-              activeIndex === index ? "opacity-100 scale-[1.01]" : "opacity-45 scale-95"
-            }`}
+            ref={trackRef}
+            id="image-track"
+            className="flex w-max gap-[2.25vw] md:gap-[2.5vw] absolute left-[50%] top-[55%] select-none touch-none"
+            style={{ transform: "translate(0%, -50%)" }}
           >
-            {/* Image Container */}
-            <div className="relative w-full aspect-[3/4] overflow-hidden bg-neutral-900 border border-white/5 rounded-[3px] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] transition-transform duration-700 group-hover:scale-[1.03]">
-              <img
-                src={src}
-                alt={TITLES[index]}
-                className="parallex-image w-[125%] h-full object-cover select-none pointer-events-none transition-transform duration-700 ease-out group-hover:scale-105"
-                style={{ objectPosition: "70% center" }}
-                draggable={false}
-              />
-            </div>
+            {IMAGES.map((src, index) => (
+              <div
+                key={index}
+                onClick={() => {
+                  if (!dragOccurred.current) {
+                    setExpandedIndex(index)
+                  }
+                }}
+                className={`flex flex-col items-start w-[41vw] sm:w-[30vw] md:w-[21vw] shrink-0 group transition-all duration-700 cursor-pointer ${
+                  activeIndex === index ? "opacity-100 scale-[1.01]" : "opacity-45 scale-95"
+                }`}
+              >
+                {/* Image Container */}
+                <div className="relative w-full aspect-[3/4] overflow-hidden bg-neutral-900 border border-white/5 rounded-[3px] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] transition-transform duration-700 group-hover:scale-[1.03]">
+                  <img
+                    src={src}
+                    alt={TITLES[index]}
+                    className="parallex-image w-[125%] h-full object-cover select-none pointer-events-none transition-transform duration-700 ease-out group-hover:scale-105"
+                    style={{ objectPosition: "70% center" }}
+                    draggable={false}
+                  />
+                </div>
 
-            {/* Caption Info */}
-            <div className="mt-5 w-full flex justify-between items-baseline font-mono text-[10px] tracking-widest text-neutral-500 uppercase px-1">
-              <span className="text-neutral-600 font-bold">{String(index + 1).padStart(2, "0")}</span>
-              <span className="text-neutral-400 group-hover:text-white transition-colors duration-300 font-medium">
-                {TITLES[index]}
-              </span>
-            </div>
+                {/* Caption Info */}
+                <div className="mt-5 w-full flex justify-between items-baseline font-mono text-[10px] tracking-widest text-neutral-500 uppercase px-1">
+                  <span className="text-neutral-600 font-bold">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="text-neutral-400 group-hover:text-white transition-colors duration-300 font-medium">
+                    {TITLES[index]}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Navigation UI & Drag instruction (Camille Mormal Style) */}
-      <footer className="fixed bottom-0 left-0 right-0 z-30 flex justify-between items-center px-6 py-6 md:px-12 md:py-8 font-mono text-[9px] uppercase tracking-[0.2em] text-neutral-500 border-t border-white/5 backdrop-blur-[2px]">
+      <footer className={`fixed bottom-0 left-0 right-0 z-35 flex justify-between items-center px-6 py-6 md:px-12 md:py-8 font-mono text-[9px] uppercase tracking-[0.2em] text-neutral-500 border-t border-white/5 backdrop-blur-[2px] transition-opacity duration-700 ${
+        expandedIndex !== null ? "opacity-0 pointer-events-none" : "opacity-100"
+      }`}>
         <div className="flex gap-4 items-center">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <span>Active Collection / Egoist</span>
@@ -290,6 +334,83 @@ export default function ParallaxPage() {
           </span>
         </div>
       </footer>
+
+      {/* Expanded Full-screen View */}
+      <div
+        className="fixed inset-0 z-30 bg-black/95 backdrop-blur-md flex flex-col items-center justify-start pt-[8vh] md:pt-[10vh] px-4 md:px-8 select-none"
+        style={{
+          opacity: expandedIndex !== null ? 1 : 0,
+          pointerEvents: expandedIndex !== null ? "auto" : "none",
+          transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+        onClick={() => setExpandedIndex(null)}
+      >
+        {expandedIndex !== null && (
+          <div className="relative w-full max-w-[85vw] md:max-w-[70vw] flex flex-col items-center">
+            {/* Title / Description (now on top of the image) */}
+            <div 
+              className="mb-6 md:mb-8 text-center select-none"
+              style={{
+                animation: "fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both",
+              }}
+            >
+              <span className="font-mono text-[9px] tracking-[0.4em] text-neutral-500 uppercase block mb-2">
+                EXHIBITION NO. {String(expandedIndex + 1).padStart(2, "0")}
+              </span>
+              <h3 className="font-instrument-serif text-2xl md:text-5xl text-neutral-200 font-normal italic tracking-tight leading-none">
+                {TITLES[expandedIndex]}
+              </h3>
+            </div>
+
+            {/* The Image */}
+            <img
+              key={expandedIndex}
+              src={IMAGES[expandedIndex]}
+              alt={TITLES[expandedIndex]}
+              className="max-w-full max-h-[50vh] object-contain rounded-[4px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] cursor-zoom-out"
+              style={{
+                animation: "expandImage 1s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Styles for expanded transitions */}
+      <style jsx global>{`
+        @keyframes expandImage {
+          from {
+            transform: scale(0.35) translateY(80px);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes fadeInUp {
+          from {
+            transform: translateY(30px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes fadeInDown {
+          from {
+            transform: translateY(-30px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </main>
   )
 }
