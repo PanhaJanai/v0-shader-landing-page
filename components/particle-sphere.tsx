@@ -109,7 +109,8 @@ export function ParticleSphere() {
         texture.flipY = false
 
         if (texture.image) {
-          const aspect = texture.image.width / texture.image.height
+          const img = texture.image as any
+          const aspect = img.width / img.height
           if (aspect > 1) {
             // Landscape: scale texture horizontally (crop sides)
             texture.repeat.set(1 / aspect, 1)
