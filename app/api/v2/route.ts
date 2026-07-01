@@ -2,10 +2,6 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // Import the singleton we created
 import { Resend } from "resend";
 
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -26,7 +22,9 @@ export async function POST(request: Request) {
     });
 
     // 2. Send email notifications via Resend
-    if (resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (apiKey) {
+      const resend = new Resend(apiKey);
       const senderEmail = process.env.SENDER_EMAIL || "onboarding@resend.dev";
       const ownerEmail = process.env.NOTIFICATION_EMAIL || "your-email@example.com";
 
