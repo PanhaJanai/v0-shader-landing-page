@@ -13,7 +13,7 @@ export default function TestPage() {
 
     try {
       // 3. Send the POST request
-      const response = await fetch("http://localhost:3000/api/v2", {
+      const response = await fetch("/api/v2", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
