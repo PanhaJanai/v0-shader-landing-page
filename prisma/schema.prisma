@@ -136,3 +136,39 @@ model SavingsGoal {
   
   createdAt    DateTime    @default(now())
 }
+
+model Product {
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  details         String
+  image           String
+  originalPrice   Float
+  discountedPrice Float
+  category        String   // "Women", "Men", "Kids", "Baby"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model MenuItem {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  price           Float
+  discountedPrice Float
+  category        Int      // 1 = Food, 2 = Drink, 3 = Dessert
+  cover           String
+  isShown         Boolean  @default(true)
+  description     String?
+  pairing         String?
+  prep            String?
+  tags            String?  // comma-separated tags
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model MenuCategory {
+  id        Int      @id // 0 = All, 1 = Food, 2 = Drink, 3 = Dessert
+  name      String
+  icon      String
+  createdAt DateTime @default(now())
+}

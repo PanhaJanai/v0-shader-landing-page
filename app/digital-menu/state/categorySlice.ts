@@ -43,6 +43,8 @@ const categorySlice = createSlice({
   }
 });
 
+import { getMenuCategories } from "@/app/(admin)/admin/digital-menu/actions";
+
 const categoriesBackup = [
   { id: 0, name: "All", icon: "FaFire" },
   { id: 1, name: "Food", icon: "GiHotDog" },
@@ -54,18 +56,19 @@ export const getCategoryAsync = createAsyncThunk(
   "category/getCategoryAsync",
   async () => {
     try {
-      // const res = await fetch(
-      //   "https://6815afab32debfe95dbc23e1.mockapi.io/categories",
-      //   { cache: "no-store" }
-      // );
-      // if (!res.ok) throw new Error("Failed to fetch data");
-      // return await res.json();
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const dbCategories = await getMenuCategories();
+      if (dbCategories && dbCategories.length > 0) {
+        return dbCategories.map(c => ({
+          id: c.id,
+          name: c.name,
+          icon: c.icon
+        }));
+      }
       return categoriesBackup;
     } catch (error) {
+      console.error("Error fetching food data from DB, fallback to mock:", error);
       return categoriesBackup;
-      console.error("Error fetching food data:", error);
-    } finally {}
+    }
   }
 );
 

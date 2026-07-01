@@ -8,6 +8,10 @@ interface Item {
   category: number;
   cover: string;
   isShown: boolean;
+  description?: string | null;
+  pairing?: string | null;
+  prep?: string | null;
+  tags?: string | null;
 }
 
 interface Order {
@@ -53,58 +57,54 @@ const initialState: CartItem = {
 //   "/images/matcha-latte.webp",
 // ]
 
+import { getMenuItems } from "@/app/(admin)/admin/digital-menu/actions";
+
 export const getItemAsync = createAsyncThunk(
   "cart/getItemAsync",
   async ({ itemList, type }: { itemList: number[]; type: string }) => {
     try {
-      // const lol = (i: number) => {
-      //   if (i % 3 == 1) {
-      //     return 1;
-      //   } else if (i % 3 == 2) {
-      //     return 2;
-      //   } else {
-      //     return 3;
-      //   }
-      // };
-      // var items: Item[] = Array.from({ length: 1000 }, (_, index) => ({
-      //   id: index,
-      //   name: `Item ${index + 1}`,
-      //   price: Math.floor(Math.random() * 100) + 1,
-      //   discounted_price: Math.floor(Math.random() * 100) + 1,
-      //   category: lol(index),
-      //   cover: covers[lol(index) - 1],
-      //   isShown: true,
-      // }));
-
-      // itemsBackup = items;
-
-    // return { items, type: "full" };
-      // await new Promise((resolve) => setTimeout(resolve, 1000));
+      const dbItems = await getMenuItems();
+      let itemsList = itemsBackup;
+      
+      if (dbItems && dbItems.length > 0) {
+        itemsList = dbItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          discounted_price: item.discountedPrice,
+          category: item.category,
+          cover: item.cover,
+          isShown: item.isShown,
+          description: item.description,
+          pairing: item.pairing,
+          prep: item.prep,
+          tags: item.tags,
+        }));
+      }
 
       if (!itemList?.length && type === "full") {
-        return { items: itemsBackup, type: "full" };
+        return { items: itemsList.filter(item => item.isShown), type: "full" };
       }
 
       if (type === "filtered") {
-        const filteredItems = itemsBackup.filter((item) =>
+        const filteredItems = itemsList.filter((item) =>
           itemList.includes(item.id)
         );
         return { items: filteredItems, type: "filtered" };
       } else if (type === "search") {
-        const searchedItems = itemsBackup.filter((item) =>
+        const searchedItems = itemsList.filter((item) =>
           itemList.includes(item.id)
         );
         return { items: searchedItems, type: "search" };
       }
-
-
     } catch (error) {
-      console.error("Error fetching food data:", error);
-
+      console.error("Error fetching food data from DB, fallback to mock:", error);
+      
+      let itemsList = itemsBackup;
       if (!itemList?.length) {
-        return { items: itemsBackup, type: "full" };
+        return { items: itemsList, type: "full" };
       } else {
-        const filteredItems = itemsBackup.filter((item) =>
+        const filteredItems = itemsList.filter((item) =>
           itemList.includes(item.id)
         );
         return { items: filteredItems, type: "filtered" };

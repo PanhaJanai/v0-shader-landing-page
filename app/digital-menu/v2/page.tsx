@@ -246,6 +246,15 @@ function MainGourmetMenu() {
     cover: "",
     isShown: false
   };
+  const [localQty, setLocalQty] = useState(1);
+
+  // Sync local quantity state when the active drawer item changes
+  useEffect(() => {
+    if (activeDrawerItem && activeDrawerItem.id !== -1) {
+      const existingOrder = orders.find((o) => o.itemId === activeDrawerItem.id);
+      setLocalQty(existingOrder ? existingOrder.quantity : 1);
+    }
+  }, [activeDrawerItem, orders]);
 
   // 1. Initial Load of items and categories
   useEffect(() => {
@@ -443,17 +452,16 @@ function MainGourmetMenu() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {spotlightItems.map((item) => {
               const isSelected = selectedItemIds.includes(item.id);
-              const detail = GOURMET_DETAILS[item.name] || { desc: "Gourmet creation prepared by our culinary team.", tags: ["Signature"] };
+              const detail = {
+                desc: item.description || GOURMET_DETAILS[item.name]?.desc || "Gourmet creation prepared by our culinary team.",
+                tags: item.tags ? item.tags.split(",") : (GOURMET_DETAILS[item.name]?.tags || ["Signature"])
+              };
               return (
                 <div 
                   key={`spotlight-${item.id}`}
                   onClick={() => {
-                    if (!isSelected) {
-                      dispatch(setIsItemDrawerOpen(true));
-                    }
+                    dispatch(setIsItemDrawerOpen(true));
                     dispatch(setItemForDrawer({ ...item, isShown: true }));
-                    dispatch(addOrRemoveSelectedItemIds({ id: item.id, type: isSelected ? "remove" : "add" }));
-                    dispatch(addOrRemoveOrder({ itemId: item.id, quantity: 1, price: item.price, discounted_price: item.discounted_price }));
                   }}
                   className={`group relative overflow-hidden rounded-xl bg-gradient-to-b from-[#18181B] to-[#121214] border transition-all duration-500 cursor-pointer hover:-translate-y-1.5 ${
                     isSelected ? "border-[#C5A880] shadow-[0_0_20px_rgba(197,168,128,0.25)]" : "border-[#C5A880]/10 hover:border-[#C5A880]/30"
@@ -576,17 +584,18 @@ function MainGourmetMenu() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {filteredList.map((item) => {
               const isSelected = selectedItemIds.includes(item.id);
-              const detail = GOURMET_DETAILS[item.name] || { desc: "An exquisite creation from our culinary experts.", tags: [], pairing: "Inquire with Sommelier", prep: "10 mins" };
+              const detail = {
+                desc: item.description || GOURMET_DETAILS[item.name]?.desc || "An exquisite creation from our culinary experts.",
+                tags: item.tags ? item.tags.split(",") : (GOURMET_DETAILS[item.name]?.tags || []),
+                pairing: item.pairing || GOURMET_DETAILS[item.name]?.pairing || "Inquire with Sommelier",
+                prep: item.prep || GOURMET_DETAILS[item.name]?.prep || "10 mins"
+              };
               return (
                 <div 
                   key={item.id}
                   onClick={() => {
-                    if (!isSelected) {
-                      dispatch(setIsItemDrawerOpen(true));
-                    }
+                    dispatch(setIsItemDrawerOpen(true));
                     dispatch(setItemForDrawer({ ...item, isShown: true }));
-                    dispatch(addOrRemoveSelectedItemIds({ id: item.id, type: isSelected ? "remove" : "add" }));
-                    dispatch(addOrRemoveOrder({ itemId: item.id, quantity: 1, price: item.price, discounted_price: item.discounted_price }));
                   }}
                   className={`group relative flex flex-col justify-between overflow-hidden rounded-xl bg-[#121214] border transition-all duration-300 hover:scale-[1.02] cursor-pointer ${
                     isSelected ? "border-[#C5A880] shadow-[0_0_15px_rgba(197,168,128,0.15)]" : "border-[#C5A880]/10 hover:border-[#C5A880]/20"
@@ -672,10 +681,19 @@ function MainGourmetMenu() {
         </div>
       )}
 
-      {/* --- EXQUISITE ITEM DRAWER / QUANTITY CONFIG --- */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/70 backdrop-blur-sm transition-opacity duration-300">
-          <div className="luxury-glass luxury-glow w-full max-w-md rounded-t-3xl sm:rounded-2xl overflow-hidden bg-[#121214] max-h-[85vh] flex flex-col p-6 animate-in slide-in-from-bottom duration-300">
+      {activeDrawerItem && activeDrawerItem.id !== -1 && (
+        <div 
+          onClick={() => dispatch(setIsItemDrawerOpen(false))}
+          className={`fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/70 backdrop-blur-sm transition-all duration-300 cursor-pointer ${
+            drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className={`luxury-glass luxury-glow w-full max-w-md rounded-t-3xl sm:rounded-2xl overflow-hidden bg-[#121214] max-h-[85vh] flex flex-col p-6 transition-all duration-300 cursor-default ${
+              drawerOpen ? "translate-y-0 sm:scale-100 opacity-100" : "translate-y-full sm:scale-95 opacity-0"
+            }`}
+          >
             
             {/* Drawer Header */}
             <div className="flex justify-between items-center pb-4 border-b border-[#C5A880]/10 mb-4">
@@ -701,7 +719,7 @@ function MainGourmetMenu() {
 
               {/* Tags Row */}
               <div className="flex flex-wrap gap-2 mb-4">
-                {(GOURMET_DETAILS[activeDrawerItem.name]?.tags || []).map((t, i) => (
+                {(activeDrawerItem.tags ? activeDrawerItem.tags.split(",") : (GOURMET_DETAILS[activeDrawerItem.name]?.tags || [])).map((t, i) => (
                   <span key={i} className="px-2 py-0.5 rounded text-[8px] font-mono tracking-widest bg-[#C5A880]/10 text-[#C5A880] border border-[#C5A880]/20 uppercase">
                     {t}
                   </span>
@@ -710,7 +728,7 @@ function MainGourmetMenu() {
 
               {/* Dish info */}
               <p className="text-sm text-[#8A898E] font-light leading-relaxed mb-4">
-                {GOURMET_DETAILS[activeDrawerItem.name]?.desc || "Our master culinary team prepares this unique recipe fresh for your table, blending rich local ingredients with creative cooking methods."}
+                {activeDrawerItem.description || GOURMET_DETAILS[activeDrawerItem.name]?.desc || "Our master culinary team prepares this unique recipe fresh for your table, blending rich local ingredients with creative cooking methods."}
               </p>
 
               {/* Culinary pairing / Prep time */}
@@ -720,7 +738,7 @@ function MainGourmetMenu() {
                     <Wine className="h-3.5 w-3.5 text-[#C5A880]" /> Recommended Pairing
                   </span>
                   <p className="text-xs text-white font-medium mt-1">
-                    {GOURMET_DETAILS[activeDrawerItem.name]?.pairing || "Inquire with Sommelier"}
+                    {activeDrawerItem.pairing || GOURMET_DETAILS[activeDrawerItem.name]?.pairing || "Inquire with Sommelier"}
                   </p>
                 </div>
                 <div>
@@ -728,7 +746,7 @@ function MainGourmetMenu() {
                     <Clock className="h-3.5 w-3.5 text-[#C5A880]" /> Preparation
                   </span>
                   <p className="text-xs text-white font-medium mt-1">
-                    {GOURMET_DETAILS[activeDrawerItem.name]?.prep || "12 mins"}
+                    {activeDrawerItem.prep || GOURMET_DETAILS[activeDrawerItem.name]?.prep || "12 mins"}
                   </p>
                 </div>
               </div>
@@ -738,15 +756,15 @@ function MainGourmetMenu() {
                 <span className="text-xs font-mono uppercase tracking-wider text-[#C5A880]">Select Quantity</span>
                 <div className="flex items-center gap-4">
                   <button 
-                    onClick={() => handleUpdateQty(activeDrawerItem.id, drawerQty - 1)}
-                    className="h-9 w-9 rounded-full bg-stone-900 hover:bg-[#C5A880]/15 text-[#C5A880] flex items-center justify-center border border-[#C5A880]/15 transition-all"
+                    onClick={() => setLocalQty(prev => Math.max(1, prev - 1))}
+                    className="h-9 w-9 rounded-full bg-stone-900 hover:bg-[#C5A880]/15 text-[#C5A880] flex items-center justify-center border border-[#C5A880]/15 transition-all cursor-pointer"
                   >
                     <Minus className="h-3.5 w-3.5" />
                   </button>
-                  <span className="font-mono text-base font-medium text-white w-6 text-center">{drawerQty}</span>
+                  <span className="font-mono text-base font-medium text-white w-6 text-center">{localQty}</span>
                   <button 
-                    onClick={() => handleUpdateQty(activeDrawerItem.id, drawerQty + 1)}
-                    className="h-9 w-9 rounded-full bg-[#C5A880] text-black hover:bg-[#D4AF37] flex items-center justify-center transition-all"
+                    onClick={() => setLocalQty(prev => prev + 1)}
+                    className="h-9 w-9 rounded-full bg-[#C5A880] text-black hover:bg-[#D4AF37] flex items-center justify-center transition-all cursor-pointer"
                   >
                     <Plus className="h-3.5 w-3.5" />
                   </button>
@@ -758,25 +776,71 @@ function MainGourmetMenu() {
             <div className="pt-4 border-t border-[#C5A880]/10 flex gap-4">
               <button 
                 onClick={() => dispatch(setIsItemDrawerOpen(false))}
-                className="flex-1 py-3 rounded-xl border border-[#C5A880]/20 text-[#C5A880] font-mono text-xs uppercase tracking-wider hover:bg-[#C5A880]/10 transition-colors"
+                className="flex-1 py-3 rounded-xl border border-[#C5A880]/20 text-[#C5A880] font-mono text-[10px] uppercase tracking-wider hover:bg-[#C5A880]/10 transition-colors cursor-pointer"
               >
                 Close
               </button>
-              <button 
-                onClick={() => dispatch(setIsItemDrawerOpen(false))}
-                className="flex-1 py-3 rounded-xl bg-[#C5A880] text-black font-mono text-xs uppercase tracking-wider font-semibold hover:bg-[#D4AF37] transition-colors"
-              >
-                Done
-              </button>
+              
+              {selectedItemIds.includes(activeDrawerItem.id) ? (
+                <div className="flex-1 flex gap-2">
+                  <button
+                    onClick={() => {
+                      // Remove from cart
+                      dispatch(addOrRemoveSelectedItemIds({ id: activeDrawerItem.id, type: "remove" }));
+                      dispatch(addOrRemoveOrder({ itemId: activeDrawerItem.id, quantity: 1, price: activeDrawerItem.price, discounted_price: activeDrawerItem.discounted_price }));
+                      dispatch(setIsItemDrawerOpen(false));
+                    }}
+                    className="flex-1 py-3 rounded-xl border border-red-500/30 text-red-400 font-mono text-[10px] uppercase tracking-wider hover:bg-red-500/10 transition-colors cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                  <button 
+                    onClick={() => {
+                      // Update quantity
+                      dispatch(setOrderQuantity({ itemId: activeDrawerItem.id, newQuantity: localQty }));
+                      dispatch(setIsItemDrawerOpen(false));
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-[#C5A880] text-black font-mono text-[10px] uppercase tracking-wider font-semibold hover:bg-[#D4AF37] transition-colors cursor-pointer"
+                  >
+                    Update
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => {
+                    // Add to cart
+                    dispatch(addOrRemoveSelectedItemIds({ id: activeDrawerItem.id, type: "add" }));
+                    dispatch(addOrRemoveOrder({ 
+                      itemId: activeDrawerItem.id, 
+                      quantity: localQty, 
+                      price: activeDrawerItem.price, 
+                      discounted_price: activeDrawerItem.discounted_price 
+                    }));
+                    dispatch(setIsItemDrawerOpen(false));
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-[#C5A880] text-black font-mono text-[10px] uppercase tracking-wider font-semibold hover:bg-[#D4AF37] transition-colors cursor-pointer"
+                >
+                  Add to Order
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* --- CART SLIDE-OVER (GOURMET ORDER REVIEW) --- */}
-      {isCartOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm transition-opacity duration-300">
-          <div className="luxury-glass w-full max-w-md bg-[#0B0B0C] h-full flex flex-col justify-between shadow-2xl p-6 border-l border-[#C5A880]/20 animate-in slide-in-from-right duration-300">
+      <div 
+        onClick={() => setIsCartOpen(false)}
+        className={`fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm transition-all duration-300 cursor-pointer ${
+          isCartOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className={`luxury-glass w-full max-w-md bg-[#0B0B0C] h-full flex flex-col justify-between shadow-2xl p-6 border-l border-[#C5A880]/20 transition-all duration-300 cursor-default ${
+            isCartOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
             
             {/* Header */}
             <div>
@@ -892,12 +956,20 @@ function MainGourmetMenu() {
 
           </div>
         </div>
-      )}
 
       {/* --- ORDER SUCCESS CONGRATULATORY MODAL --- */}
-      {showOrderSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-300">
-          <div className="luxury-glass luxury-glow w-full max-w-md rounded-2xl p-8 bg-[#121214] text-center flex flex-col items-center gap-6 animate-in zoom-in-95 duration-300">
+      <div 
+        onClick={() => setShowOrderSuccessModal(false)}
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 transition-all duration-300 cursor-pointer ${
+          showOrderSuccessModal ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className={`luxury-glass luxury-glow w-full max-w-md rounded-2xl p-8 bg-[#121214] text-center flex flex-col items-center gap-6 transition-all duration-300 cursor-default ${
+            showOrderSuccessModal ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          }`}
+        >
             <div className="h-16 w-16 bg-[#C5A880]/15 rounded-full flex items-center justify-center border border-[#C5A880]/40">
               <CheckCircle className="h-8 w-8 text-[#C5A880]" />
             </div>
@@ -929,7 +1001,6 @@ function MainGourmetMenu() {
             </button>
           </div>
         </div>
-      )}
     </div>
   );
 }

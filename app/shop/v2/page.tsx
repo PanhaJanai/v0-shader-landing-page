@@ -30,6 +30,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "swiper/css";
 import "swiper/css/pagination";
 import "./styles.css";
+import { getProducts } from "@/app/(admin)/admin/shop/actions";
 
 // ── Gourmet Fashion Catalog Data ─────────────────────────────────────────────
 const CATALOG_DATA = {
@@ -187,6 +188,34 @@ export default function AppV2() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeSubCategory, setActiveSubCategory] = useState<string | null>(null);
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
+  const [catalogData, setCatalogData] = useState<any>(CATALOG_DATA);
+
+  // Fetch dynamic products from Prisma database
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const dbProducts = await getProducts();
+        if (dbProducts && dbProducts.length > 0) {
+          // Group products by category
+          const grouped: any = {
+            Women: [],
+            Men: [],
+            Kids: [],
+            Baby: []
+          };
+          dbProducts.forEach((p) => {
+            if (grouped[p.category]) {
+              grouped[p.category].push(p);
+            }
+          });
+          setCatalogData(grouped);
+        }
+      } catch (err) {
+        console.error("Failed to load products from database, falling back to static data:", err);
+      }
+    }
+    loadProducts();
+  }, []);
 
   const swiperRef = useRef<SwiperType | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -467,7 +496,7 @@ export default function AppV2() {
               }}
               speed={800}
             >
-              {(CATALOG_DATA[catName] || []).map((product) => (
+              {(catalogData[catName] || []).map((product) => (
                 <SwiperSlide key={product.id}>
                   {/* Luxury Product Split View */}
                   <div className="flex flex-col md:flex-row w-full h-full justify-between items-center bg-[#0B0B0C] px-8 md:px-24 pt-24 pb-12 gap-8 md:gap-16">
