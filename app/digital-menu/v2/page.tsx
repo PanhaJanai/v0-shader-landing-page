@@ -319,7 +319,7 @@ function MainGourmetMenu() {
     }
     
     // Simulate API POST
-    fetch("http://localhost:3000/api/product", {
+    fetch("/api/product", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(orders),

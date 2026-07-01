@@ -10,7 +10,7 @@ export default function Footer(/* { order }: FooterProps */) {
   const orders = useSelector((state: RootState) => state.cartItem.orders);
 
   const notify = () => {
-    fetch("http://localhost:3000/api/product", {
+    fetch("/api/product", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(orders),
